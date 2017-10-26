@@ -4,7 +4,7 @@
 ((window) => {
     'use strict';
     function define_library() {
-        const version = {main: 1, sub: 0, patch: 0};
+        const version = {main: 1, sub: 1, patch: 0};
         //If you contributed to this project in some way, feel free to include
         //your real name and personal website as an element in the authors array
         const authors = [{name: "Jake Hall", website: "http://jakehall.me"},];
@@ -21,8 +21,8 @@
                 `Created By:\n` +
                 `${authors[0].name}\t${authors[0].website}\n\n` +
                 `For more information on how to use the MLBStats library ` +
-                `check out the "readme.md" on GitHub here:\n\n` +
-                `(Link coming in next update!)\n\n` +
+                `check out the "readme.md" on GitHub here (Copy & Paste):\n\n` +
+                `https://github.com/jakeehall/MLBStats/blob/master/readme.md\n\n` +
                 `If any issues related to this library occur, please report` +
                 `all available issue-related information to our GitHub page!`;
             if (authors.length > 1) {
@@ -134,7 +134,7 @@
 
         //PASS gameID or Search Object
         //RETURN Formated Date Object
-        MLBStats.gameIDtoDate = (search, callback) => {
+        MLBStats.gameToDate = (search, callback) => {
             MLBStats.searchForGameID(search, (gameID) => {
                 //If the gameID is found and that it is a string
                 if (gameID !== null && typeof(gameID) === 'string') {
@@ -211,10 +211,34 @@
                         return callback(gameID, gameStats, seriesStats);
                     });
 
-                //teamID
-                } else if (typeof(search.teamID) === 'number' || typeof(search.teamID) === 'string') {
-                    //games
-                    return callback('gid_2017_09_16_sdnmlb_colmlb_1');
+                //teamID as String
+                } else if (typeof(search.teamID) === 'string') {
+                    MLBStats.gamesOnDate([{
+                        search: {
+                            date: search.date,
+                        }
+                    }], (games) => {
+                        for (let i = 0, len = games[0].length; i < len; i++) {
+                            let item = games[0][i];
+                            console.warn(item);
+                            if (item.away_code === search.teamID
+                                || item.away_name_abbrev === search.teamID
+                                || item.home_code === search.teamID
+                                || item.home_name_abbrev === search.teamID) {
+                                if (search.date.game === 1) {
+                                    let gid = MLBStats.formatGameID(item.id);
+                                    return callback(gid);
+                                } else {
+                                    if (item.game_nbr === 2 || item.double_header_sw === 'Y') {
+                                        let gid = MLBStats.formatGameID(item.id);
+                                        return callback(gid);
+                                    } else {
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                    });
 
                 //Either playerID or teamID is required to return a gameID
                 } else {
@@ -254,6 +278,7 @@
 
             let addPlayer = (player) => {
                 itemsProcessed++;
+                //If player request didn't return null then add to array
                 if (player !== null) {
                     players[player.batter.id] = player;
                 }
@@ -284,13 +309,13 @@
                             //Check if batter request was successful
                             if (batterStats === null) {
                                 addPlayer(null);
-                            //if successful then format stats
-                            } else {
-                                player.batter = batterStats.Player;
-                                player.batter.game = gameStats;
-                                player.batter.series = seriesStats;
-                                player.date = date;
                             }
+
+                            player.batter = batterStats.Player;
+                            player.batter.game = gameStats;
+                            player.batter.series = seriesStats;
+                            player.date = date;
+                            player.rq = item;
 
                             //Check if player is a pitcher, if not return now
                             if (batterStats.Player.pos !== 'P') {
@@ -328,13 +353,30 @@
         CALLBACK todays games
         */
         MLBStats.gamesOnDate = (rq, callback) => {
-            let date = MLBStats.formatDate(rq.search.date);
-            request({
-                leauge: 'mlb',
-                date: date,
-                endpoint: `/master_scoreboard.json`,
-            }, (games) => {
-                return callback(games.data.games.game);
+            //If rq (Request Query) isn't an Array make it single element array
+            if (!Array.isArray(rq)) {
+                rq = [rq];
+            }
+
+            let dates = [];
+            let itemsProcessed = 0;
+
+            //Loop through each game passed
+            rq.forEach((item, index, array) => {
+                let date = MLBStats.formatDate(item.search.date);
+                request({
+                    leauge: 'mlb',
+                    date: date,
+                    endpoint: `/master_scoreboard.json`,
+                }, (games) => {
+                    if (typeof(games.data.games.game) !== 'undefined') {
+                        games.data.games.game.rq = item;
+                        dates.push(games.data.games.game);
+                    }
+                    itemsProcessed++;
+                    if(itemsProcessed === array.length)
+                        return callback(dates);
+                });
             });
         }
 
@@ -365,12 +407,13 @@
             //Loop through each game passed
             rq.forEach((item, index, array) => {
                 MLBStats.searchForGameID(item.search, (gameID) => {
-                    MLBStats.gameIDtoDate(gameID, (date) => {
+                    MLBStats.gameToDate(gameID, (date) => {
                         request({
                             leauge: 'mlb',
                             date: date,
                             endpoint: `/${gameID}/linescore.json`,
                         }, (game) => {
+                            game.data.game.rq = item;
                             games.push(game.data.game);
                             itemsProcessed++;
                             if(itemsProcessed === array.length)
@@ -396,14 +439,29 @@
         CALLBACK bench
         */
         MLBStats.bench = (rq, callback) => {
-            MLBStats.searchForGameID(rq, (gameID) => {
-                MLBStats.gameIDtoDate(gameID, (date) => {
-                    request({
-                        leauge: 'mlb',
-                        date: date,
-                        endpoint: `/${gameID}/benchO.xml`,
-                    }, (bench) => {
-                        return callback(bench.bench);
+            //If rq (Request Query) isn't an Array make it single element array
+            if (!Array.isArray(rq)) {
+                rq = [rq];
+            }
+
+            let games = [];
+            let itemsProcessed = 0;
+
+            //Loop through each game passed
+            rq.forEach((item, index, array) => {
+                MLBStats.searchForGameID(item.search, (gameID) => {
+                    MLBStats.gameToDate(gameID, (date) => {
+                        request({
+                            leauge: 'mlb',
+                            date: date,
+                            endpoint: `/${gameID}/benchO.xml`,
+                        }, (bench) => {
+                            bench.bench.rq = item;
+                            games.push(bench.bench);
+                            itemsProcessed++;
+                            if(itemsProcessed === array.length)
+                                return callback(games);
+                        });
                     });
                 });
             });
