@@ -1,6 +1,6 @@
 # MLBStats
 ##### Get ready for the 2018 season!
-v1.0.0
+v1.1.0
 By Jacob Hall
 
 MLBStats is an easy to use, and powerful JavaScript library for fetching scores and stats from MLB games. MLBStats is in its initial release stages, features and support are continuously being developed through the post/off season into preseason 2018, and beyond.
@@ -206,7 +206,7 @@ This function can be used to check the users library version for compatibility a
 >
 >
 > //From gameID:
-> MLBStats.gameIDtoDate('gid_2017_09_16_sdnmlb_colmlb_1', (date) => {
+> MLBStats.gameToDate('gid_2017_09_16_sdnmlb_colmlb_1', (date) => {
 >   let formattedDate = date;
 > });
 > ```

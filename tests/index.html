@@ -5,7 +5,7 @@
     <title>MLBStats - Learn</title>
 </head>
 <body>
-<script type="text/javascript" src="../src/MLBStats.1.0.0.js"></script>
+<script type="text/javascript" src="../src/MLBStats.js"></script>
 <script>
 /*
 //MANUAL
@@ -152,24 +152,37 @@ MLBStats.player(playersSearch, (p) => {
 
 //Print the bullpen for a given game
 //{date:{year: 2017, month: 9, day: 16, game: 1},teamID:115}
-MLBStats.bench('gid_2017_09_16_sdnmlb_colmlb_1', (b) => {
+
+rq =
+[{
+    search: 'gid_2017_09_16_sdnmlb_colmlb_1',
+},
+{
+    search: 'gid_2017_09_17_sdnmlb_colmlb_1',
+},];
+
+MLBStats.bench(rq, (b) => {
     //When creating your own functions it's helpful to rember that you
     //can log item to the console to view what stats you have access to
     //console.log(b);
-    let output =`Bench\n` +
-                `${b.away.name} (Away)\n`;
-    for (let item in b.away.pitchers.pitcher) {
-        let player = b.away.pitchers.pitcher[item];
-        output+=`${player.last}\tThrows ${player.t}\n` +
-                `Record ${player.w} - ${player.l}\n`;
+    if (b !== null) {
+        b.forEach((game) => {
+            let output =`Bench\n` +
+                        `${game.away.name} (Away)\n`;
+            for (let item in game.away.pitchers.pitcher) {
+                let player = game.away.pitchers.pitcher[item];
+                output+=`${player.last}\tThrows ${player.t}\n` +
+                        `Record ${player.w} - ${player.l}\n`;
+            }
+            output +=   `\n${game.home.name} (Home)\n`;
+            for (let item in game.home.pitchers.pitcher) {
+                let player = game.home.pitchers.pitcher[item];
+                output+=`${player.last}\tThrows ${player.t}\n` +
+                        `Record ${player.w} - ${player.l}\n`;
+            }
+            console.log(output);
+        });
     }
-    output +=   `\n${b.home.name} (Home)\n`;
-    for (let item in b.home.pitchers.pitcher) {
-        let player = b.home.pitchers.pitcher[item];
-        output+=`${player.last}\tThrows ${player.t}\n` +
-                `Record ${player.w} - ${player.l}\n`;
-    }
-    console.log(output);
 });
 //Although it's not shown in this demo, rember that you can chain functions
 //allows returned benched playerID's to then searched with the player function
@@ -178,8 +191,8 @@ MLBStats.bench('gid_2017_09_16_sdnmlb_colmlb_1', (b) => {
 let gamesToSearch =
 [{
     search: {
-        playerID: 453568,
-        date: {year: 2017, month: 9, day: 1, game: 1},
+        teamID: 'col',
+        date: {year: 2017, month: 10, day: 1, game: 1},
     },
 },
 {
@@ -204,11 +217,17 @@ MLBStats.game(gamesToSearch, (g) => {
 
 
 //Creating a web app that displays todays games with live info
-MLBStats.gamesOnDate({
+MLBStats.gamesOnDate([
+{
     search: {
         date: 0,//Shortcut for today
     },
-}, (games) => {
+},
+{
+    search: {
+        date: -1,
+    },
+},], (games) => {
     if (games !== null && Array.isArray(games)) {
         games.forEach((item) => {
             let score = '';

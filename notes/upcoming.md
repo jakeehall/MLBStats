@@ -1,9 +1,3 @@
-## Planned for v1.1.0
-* Search for game (teamID and date)
-* Search returned in callback
-* Add GitHub resource link to manual
-
-
 ## By v2.0.0
 * Pretty data responses
 * Full error Handling
@@ -25,6 +19,7 @@
 * Support for double headers (Shortcut)
 * teamID lookup tables
 * search for player (teamID and pos)
+* box score look up
 
 
 ## By v3.0.0
