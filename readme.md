@@ -1,6 +1,5 @@
 # MLBStats
 ##### Get ready for the 2018 season!
-v1.1.0
 By Jacob Hall
 
 MLBStats is an easy to use, and powerful JavaScript library for fetching scores and stats from MLB games. MLBStats is in its initial release stages, features and support are continuously being developed through the post/off season into preseason 2018, and beyond.
