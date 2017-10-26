@@ -1,5 +1,8 @@
+## v1.1.1 [20171026]
+* ADDED: v1.1.1 min file (Sorry!)
+
 ## v1.1.0 [20171026]
-!* ADDED: Searching for game with teamID and Date
+* ADDED: Searching for game with teamID and Date
 * ADDED: Each object in rq (Request Query), now returned through callback
     * FIXED: Each item is also paired with its correct rq
 * ADDED: GitHub documentation link to Manual
