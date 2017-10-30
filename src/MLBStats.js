@@ -4,7 +4,7 @@
 ((window) => {
     'use strict';
     function define_library() {
-        const version = {main: 1, sub: 1, patch: 0};
+        const version = {main: 1, sub: 1, patch: 2};
         //If you contributed to this project in some way, feel free to include
         //your real name and personal website as an element in the authors array
         const authors = [{name: "Jake Hall", website: "http://jakehall.me"},];
