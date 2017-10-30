@@ -211,40 +211,48 @@
                         return callback(gameID, gameStats, seriesStats);
                     });
 
-                //teamID as String
-                } else if (typeof(search.teamID) === 'string') {
-                    MLBStats.gamesOnDate([{
-                        search: {
-                            date: search.date,
-                        }
-                    }], (games) => {
-                        for (let i = 0, len = games[0].length; i < len; i++) {
-                            let item = games[0][i];
-                            console.warn(item);
-                            if (item.away_code === search.teamID
-                                || item.away_name_abbrev === search.teamID
-                                || item.home_code === search.teamID
-                                || item.home_name_abbrev === search.teamID) {
-                                if (search.date.game === 1) {
+            //teamID as String or Number
+            } else if (typeof(search.teamID) === 'string' || typeof(search.teamID) === 'number') {
+                //If teamID passed in is a number, then change it to a string
+                if (typeof(search.teamID) === 'number') {
+                    search.teamID = (search.teamID).toString();
+                }
+                MLBStats.gamesOnDate([{
+                    search: {
+                        date: search.date,
+                    }
+                }], (games) => {
+                    for (let i = 0, len = games[0].length; i < len; i++) {
+                        let item = games[0][i];
+                        if (item.away_team_id === search.teamID
+                            || item.home_team_id === search.teamID
+                            || item.away_code === search.teamID
+                            || item.away_name_abbrev === search.teamID
+                            || item.home_code === search.teamID
+                            || item.home_name_abbrev === search.teamID) {
+
+                            //if the search is for game one on a date
+                            if (search.date.game === 1) {
+                                let gid = MLBStats.formatGameID(item.id);
+                                return callback(gid);
+                            } else {
+                                if (item.game_nbr === 2 || item.double_header_sw === 'Y') {
                                     let gid = MLBStats.formatGameID(item.id);
                                     return callback(gid);
                                 } else {
-                                    if (item.game_nbr === 2 || item.double_header_sw === 'Y') {
-                                        let gid = MLBStats.formatGameID(item.id);
-                                        return callback(gid);
-                                    } else {
-                                        continue;
-                                    }
+                                    continue;
                                 }
                             }
                         }
-                    });
+                    }
+                });
 
                 //Either playerID or teamID is required to return a gameID
                 } else {
                     console.error(errorMsg);
                     return callback(null);
                 }
+
             //Unrecognized format
             } else {
                 console.error(errorMsg);
