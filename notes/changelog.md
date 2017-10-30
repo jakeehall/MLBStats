@@ -1,3 +1,7 @@
+## v1.1.2 [20171029]
+* ADDED: When searching for a game with a teamID you can now use the teamID number (Ex. coloradoRockies = 115)
+* CHANGED: min files now properly include version in their name
+
 ## v1.1.1 [20171026]
 * ADDED: v1.1.1 min file (Sorry!)
 
