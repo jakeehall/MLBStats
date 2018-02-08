@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MLBStats - Learn</title>
+</head>
+<body>
+<script type="text/javascript" src="../src/MLBStats.js"></script>
+<script>
+/*
+//MANUAL
+MLBStats.man();
+
+
+//MLBStats OBJECT for full list of functions
+console.log(MLBStats);
+
+
+//Return VERSION version
+MLBStats.version((main, sub, patch) => {
+    console.log(`v${main}.${sub}.${patch}`);
+});
+
+*/
+
+//PITCHER "608566" (German Marquez)
+MLBStats.player({
+    search: {
+        playerID: 608566,
+        date: {
+            year: 2017,
+            month: 9,
+            day: 14,
+            game: 1,
+        },
+    },
+}, (players) => {
+    for (let p in players) {
+        if (players[p].Batting.Game.h === 1) {
+            console.log(`${players[p].fullName} has ${players[p].Batting.Game.h} hit.`);
+        } else {
+            console.log(`${players[p].fullName} has ${players[p].Batting.Game.h} hits.`);
+        }
+    }
+});
+//the second parameter "0" is a shortcut for saying the date is today
+//-1 for yesterday
+//0 for today
+//1 for tomorrow, etc...
+
+
+//the third parameter is the callback function where you place your code
+MLBStats.player({
+    search: {
+        playerID: 453568,
+        date: {
+            year: 2017,
+            month: 10,
+            day: 4,
+            game: 1,
+        },
+    },
+}, (players) => {
+    for (let p in players) {
+        if(players[p].Batting.Game.ab === 1) {
+            console.log(`${players[p].fullName} had ${players[p].Batting.Game.ab} at bat.`);
+        } else {
+            console.log(`${players[p].fullName} had ${players[p].Batting.Game.ab} at bats.`);
+        }
+        //OUTPUT: NAME had x at bat(s)
+
+        //SHORTHAND (Same output as above):
+        console.log(`${players[p].fullName} had ${players[p].Batting.Game.ab} at bat${players[p].Batting.Game.ab === 1 ? '' : 's'}.`);
+    }
+});
+
+
+//you may also pass in a JavaScript Date Object as the second parameter
+MLBStats.player({
+    search: {
+        playerID: 453568,
+        date: new Date(1503980931904),
+    },
+}, (players) => {
+    for (let p in players) {
+        console.log(
+            `${players[p].fullName} was\n` +
+            `${players[p].Batting.Season.h} for ${players[p].Batting.Season.ab} or ${players[p].Batting.Season.avg}\n` +
+            `for the season on ${players[p].Date.month}/${players[p].Date.day}/${players[p].Date.year}`
+        );
+        //180 for 530 or .340
+    }
+});
+//Note: for up-to-date season stats you must use todays date. If you pass in a
+//pervious date, the players season stats at that point of the season will be returned
+
+
+//Charlie Blackmon, Mark Renyolds, Gerardo Parra
+let playersSearch =
+[{
+    search: {
+        playerID: 453568,
+        date: {
+            year: 2017,
+            month: 9,
+            day: 1,
+        },
+    },
+},
+{
+    search: {
+        playerID: 448602,
+        date: {
+            year: 2017,
+            month: 9,
+            day: 1,
+        },
+    },
+},
+{
+    search: {
+        playerID: 467827,
+        date: {
+            year: 2017,
+            month: 9,
+            day: 1,
+        },
+    },
+}];
+
+MLBStats.player(playersSearch, (players) => {
+    //When creating your own functions it's helpful to rember that you
+    //can log item to the console to view what stats you have access to
+    //console.log(players);
+    for (let p in players) {
+        console.log(
+            `${players[p].fullName}\n` +
+            `${players[p].Batting.Game.ab} at bats on ` +
+            `${players[p].Date.month}/${players[p].Date.day}/${players[p].Date.year}`
+        );
+        //First Name, Last Name
+        //x at bats on given date
+    }
+});
+
+
+//Print the bullpen for a given game
+//{date:{year: 2017, month: 9, day: 16, game: 1},teamID:115}
+
+let rq =
+[{
+    search: 'gid_2017_09_16_sdnmlb_colmlb_1',
+},
+{
+    search: 'gid_2017_09_17_sdnmlb_colmlb_1',
+},];
+
+MLBStats.bench(rq, (benches) => {
+    //When creating your own functions it's helpful to rember that you
+    //can log item to the console to view what stats you have access to
+    //console.log(b);
+    for (let b in benches) {
+        let output =`Bench\n` +
+                    `${benches[b].away.name} (Away)\n`;
+        for (let item in benches[b].away.pitchers.pitcher) {
+            let player = benches[b].away.pitchers.pitcher[item];
+            output+=`${player.last}\tThrows ${player.t}\n` +
+                    `Record ${player.w} - ${player.l}\n`;
+        }
+        output +=   `\n${benches[b].home.name} (Home)\n`;
+        for (let item in benches[b].home.pitchers.pitcher) {
+            let player = benches[b].home.pitchers.pitcher[item];
+            output+=`${player.last}\tThrows ${player.t}\n` +
+                    `Record ${player.w} - ${player.l}\n`;
+        }
+        console.log(output);
+    }
+});
+//Although it's not shown in this demo, rember that you can chain functions
+//allows returned benched playerID's to then searched with the player function
+
+
+let gamesToSearch =
+[{
+    search: {
+        teamID: 115,
+        date: {year: 2017, month: 10, day: 1, game: 1},
+    },
+},
+{
+    search: {
+        teamID: 'col',
+        date: {year: 2017, month: 9, day: 4, game: 1},
+    },
+}];
+
+MLBStats.game(gamesToSearch, (games) => {
+    //When creating your own functions it's helpful to rember that you
+    //can log item to the console to view what stats you have access to
+    //console.log(g);
+    for (let g in games) {
+        //Print out the away teams city and name and the home teams city and name
+        console.log(`${games[g].away_team_city} ${games[g].away_team_name} @ ${games[g].home_team_city} ${games[g].home_team_name}`);
+    }
+});
+
+
+MLBStats.game({
+    search: {
+        teamID: "col",
+        date: 0,
+    }
+}, (g) => {
+    console.log(g);
+});
+
+
+//Creating a web app that displays todays games with live info
+MLBStats.gamesOnDate([
+{
+    search: {
+        date: 0,//Shortcut for today
+    },
+},
+{
+    search: {
+        date: {year: 2017, month: 9, day: 4},
+    },
+},], (results) => {
+    if (results !== null && Array.isArray(results)) {
+        results.forEach((item) => {
+            item.forEach((game) => {
+                let score = '';
+                //When creating your own functions it's helpful to rember that you
+                //can log item to the console to view what stats you have access to
+                //console.log(item);
+
+                if (typeof(game.linescore) !== 'undefined') {
+                    score = `${game.linescore.r.away} - ${game.linescore.r.home}\t`;
+
+                    //If game is in progress print inning and inning state with outs
+                    if (game.status.status === "In Progress") {
+                        score += `${game.status.inning_state} ${game.status.inning}\t`;
+                        score += `${game.status.o} out(s)`;
+
+                    //Else if the game is over mark the score as final
+                    } else {
+                        score += game.status.status;
+                    }
+
+                //If the game hasn't started, then print the time that the game begins
+                } else {
+                    score = `${game.time}${game.ampm} ${game.time_zone}`;
+                }
+
+                //Print out the away teams city and name and the home teams city and name
+                console.log(`${game.away_team_city} ${game.away_team_name} @ ${game.home_team_city} ${game.home_team_name}\n${score}`);
+            });
+        });
+    }
+});
+
+</script>
+</body>
+</html>
