@@ -1,74 +1,70 @@
-//MLBStats, a Major League Baseball Stats library written in JavaScript
+//MLBStats, a JavaScript wrapper for fetching Major League Baseball Stats
 //Created By Jacob Hall
+//https://github.com/jakeehall/MLBStats/
 
-((window) => {
-    'use strict';
-    function define_library() {
-        const Version = {main: 1, sub: 2, patch: 0};
+"use strict";
+
+
+require('es6-promise/auto');
+require('isomorphic-fetch');
+let DOMParser = require('xmldom').DOMParser;
+
+(() => {
+    const MLBStats = new function() {
+
+        const Version = {main: 1, sub: 3, patch: 0};
         //If you contributed to this project in some way, feel free to include
         //your real name and personal website as an element in the authors array
         const authors = [{name: "Jake Hall", website: "http://jakehall.me"},];
 
-        let MLBStats = {};
-
 
 
         //Alert manual, a quick reference guide for this library
-        MLBStats.manual = () => {
+        this.manual = () => {
             let manual =
-                `MLBStats\n` +
-                `v${Version.main}.${Version.sub}.${Version.patch}\n\n` +
-                `Created By:\n` +
-                `${authors[0].name}\t${authors[0].website}\n\n` +
+                `MLBStats v${Version.main}.${Version.sub}.${Version.patch}\n\n`+
+                `Created By ${authors[0].name}\t\t${authors[0].website}\n\n` +
                 `For more information on how to use the MLBStats library ` +
-                `check out the "readme.md" on GitHub here (Copy & Paste):\n\n` +
-                `https://github.com/jakeehall/MLBStats/blob/master/readme.md\n\n` +
+                `check out the "readme.md" on GitHub:\n` +
+                `https://github.com/jakeehall/MLBStats\n\n` +
                 `If any issues related to this library occur, please report` +
                 `all available issue-related information to our GitHub page!`;
             if (authors.length > 1) {
                 manual += `\n\nContributors:\n`;
                 for(let i = 1, len = authors.length; i < len; i++) {
-                    manual += `${authors[i].name}\t${authors[i].website}\n`;
+                    manual += `${authors[i].name}\t\t${authors[i].website}\n`;
                 }
             }
-            alert(manual);
+            console.log(manual);
+            return manual;
         }
 
 
 
         /*
         Check the users library version for compatibility and troubleshooting
-        PASS true, to output log the formatted version string to the console
-        RETURN the version object:
-        {
-            main: 1,
-            sub: 0,
-            patch: 0,
-        }
+        CALLBACK broken down into each sub-version
         */
-        MLBStats.version = (log = false) => {
-            if(log) {
-                console.log(`v${Version.main}.${Version.sub}.${Version.patch}`);
-            }
-            return version;
+        this.version = (callback) => {
+            return callback(Version.main, Version.sub, Version.patch);
         }
 
 
 
-        //TRY CATCH THROW
         //PASS valid date formats (listed in errorMsg below)
-        //RETURN Formatted Date Object: {year: 2017, month: 9, day: 1, game: 1}
-        MLBStats.formatDate = (date) => {
-            let errorMsg =
+        //CALLBACK Formatted Date Object: {year: 2017, month: 9, day: 1, game: 1}
+        this.formatDate = (date, callback) => {
+            const errorMsg =
                 `Invalid Date Format!\n` +
                 `Use one of the lookup formats listed below:\n` +
-                `1. Shortcut Date: -1=Yesterday, 0=Today, 1=Tomorrow...\n` +
-                `2. Formatted Date Object: {year: 2017, month: 9, day: 1}\n` +
-                `3. JavaScript Date Object`;
+                `1. Formatted Date Object: {year: 2017, month: 9, day: 1}\n` +
+                `2. JavaScript Date Object\n` +
+                `3. Shortcut Date: -1=Yesterday, 0=Today, 1=Tomorrow, ...`;
 
             //If no date is given, default to today
-            if (typeof(date) === 'undefined')
+            if (typeof(date) === 'undefined') {
                 date = 0;
+            }
 
             //If shortcut is used, create JavaScript Date Object with new date
             //by converting to a JS Date object we can support. Ex: -365
@@ -99,35 +95,37 @@
                     dd = Number(date.day);
                     if (typeof(date.game) !== 'undefined') {
                         g = Number(date.game);
+                    } else {
+                        g = 1;
                     }
 
                 //Unknown Format
                 } else {
                     console.error(`${errorMsg}\nUnknown Date Object!`);
-                    return null;
+                    return callback(null);
                 }
 
                 //Add leading zero if day or month is a single digit
                 if (mm < 10) mm = "0"+mm;
                 if (dd < 10) dd = "0"+dd;
                 //Return Formatted Date
-                return {year: yyyy, month: mm, day: dd, game: g};
+                return callback({year: yyyy, month: mm, day: dd, game: g});
             }
 
             console.error(errorMsg);
-            return null;
+            return callback(null);
         }
 
 
 
         //PASS gameID path or gameday
-        //RETURN gameID
-        MLBStats.formatGameID = (unformattedGameID) => {
-            let len = unformattedGameID.length;
+        //CALLBACK formattedGameID
+        this.formatGameID = (gameID, callback) => {
+            let len = gameID.length;
             if (len === 26) {
                 //2017/09/23/colmlb-sdnmlb-1
                 //replace '/' and '-' with '_'
-                return 'gid_'+unformattedGameID.replace(/\/|-/g, '_');
+                return callback('gid_'+gameID.replace(/\/|-/g, '_'));
             }
         }
 
@@ -135,8 +133,8 @@
 
         //PASS gameID or Search Object
         //RETURN Formated Date Object
-        MLBStats.gameToDate = (search, callback) => {
-            MLBStats.searchForGameID(search, (gameID) => {
+        this.gameIDToDate = (search, callback) => {
+            this.searchForGameID(search, (gameID) => {
                 //If the gameID is found and that it is a string
                 if (gameID !== null && typeof(gameID) === 'string') {
 
@@ -164,11 +162,10 @@
 
 
 
-        //TRY CATCH THROW
         //PASS gameID as String or Search Object
         //CALLBACK gameID
-        MLBStats.searchForGameID = (search, callback) => {
-            let errorMsg =
+        this.searchForGameID = (search, callback) => {
+            const errorMsg =
                 `Invalid Search Object!\n` +
                 `Pass either a gameID as a String, or a Search Object:\n`+
                 `{date: {year: 2017, month: 9, day: 1, game: 1}, playerID: 453568}\n` +
@@ -183,76 +180,89 @@
                 if (typeof(search.gameID) === 'string') {
                     return callback(search.gameID);
                 }
+
                 //Format the date passed in, if no date passed set day to today
-                search.date = MLBStats.formatDate(search.date);
+                this.formatDate(search.date, (formattedDate) => {
+                    search.date = formattedDate;
 
-                //playerID
-                if (typeof(search.playerID) === 'number' || typeof(search.playerID) === 'string') {
-                    request({
-                        leauge: 'mlb',
-                        date: search.date,
-                        endpoint: `/batters/${search.playerID}_${search.date.game}.xml`,
-                    }, (data) => {
-                        let gameID = MLBStats.formatGameID(data.batting.game_id);
+                    //playerID
+                    if (typeof(search.playerID) === 'number' || typeof(search.playerID) === 'string') {
+                        request({
+                            leauge: 'mlb',
+                            date: search.date,
+                            endpoint: `/batters/${search.playerID}_${search.date.game}.xml`,
+                        }, (data) => {
+                            this.formatGameID(data.batting.game_id, (gameID) => {
+                                let gameStats = {}, seriesStats = {};
 
-                        let gameStats = {}, seriesStats = {};
+                                //search for series and game stats, set their values if available
+                                for (let key in data.batting) {
+                                    if (!key.startsWith('s_')) {
+                                        //players series stats
+                                        if (key.startsWith('ser_')) {
+                                            //rename key without 'ser_'
+                                            let keyName = key.slice(4);
+                                            seriesStats[keyName] = data.batting[key];
+                                        //players game stats
+                                        } else {
+                                            gameStats[key] = data.batting[key];
+                                        }
+                                    }
+                                }
 
-                        //search for series and game stats, set their values if available
-                        for (let key in data.batting) {
-                            if (!key.startsWith('s_')) {
-                                if (key.startsWith('ser_')) {
-                                    let keyName = key.slice(4);
-                                    seriesStats[keyName] = data.batting[key];
-                                } else {
-                                    gameStats[key] = data.batting[key];
+                                return callback(gameID, gameStats, seriesStats);
+                            });
+                        });
+
+                    //teamID as String or Number
+                    } else if (typeof(search.teamID) === 'string' || typeof(search.teamID) === 'number') {
+                        //If teamID passed in is a number, then change it to a string
+                        if (typeof(search.teamID) === 'number') {
+                            search.teamID = (search.teamID).toString();
+                        }
+                        this.gamesOnDate([{
+                            search: {
+                                date: search.date,
+                            }
+                        }], (games) => {
+                            if (typeof(games[0]) === 'undefined') {
+                                console.warn(games);
+                                return callback(null);
+                            }
+
+                            for (let i = 0, len = games[0].length; i < len; i++) {
+                                let item = games[0][i];
+                                if (item.away_team_id === search.teamID
+                                    || item.home_team_id === search.teamID
+                                    || item.away_code === search.teamID
+                                    || item.away_name_abbrev === search.teamID
+                                    || item.home_code === search.teamID
+                                    || item.home_name_abbrev === search.teamID) {
+
+                                    //if the search is for game one on a date
+                                    if (search.date.game === 1) {
+                                        this.formatGameID(item.id, (gameID) => {
+                                            return callback(gameID);
+                                        });
+                                    } else {
+                                        if (item.game_nbr === 2 || item.double_header_sw === 'Y') {
+                                            this.formatGameID(item.id, (gameID) => {
+                                                return callback(gameID);
+                                            });
+                                        } else {
+                                            continue;
+                                        }
+                                    }
                                 }
                             }
-                        }
+                        });
 
-                        return callback(gameID, gameStats, seriesStats);
-                    });
-
-            //teamID as String or Number
-            } else if (typeof(search.teamID) === 'string' || typeof(search.teamID) === 'number') {
-                //If teamID passed in is a number, then change it to a string
-                if (typeof(search.teamID) === 'number') {
-                    search.teamID = (search.teamID).toString();
-                }
-                MLBStats.gamesOnDate([{
-                    search: {
-                        date: search.date,
-                    }
-                }], (games) => {
-                    for (let i = 0, len = games[0].length; i < len; i++) {
-                        let item = games[0][i];
-                        if (item.away_team_id === search.teamID
-                            || item.home_team_id === search.teamID
-                            || item.away_code === search.teamID
-                            || item.away_name_abbrev === search.teamID
-                            || item.home_code === search.teamID
-                            || item.home_name_abbrev === search.teamID) {
-
-                            //if the search is for game one on a date
-                            if (search.date.game === 1) {
-                                let gid = MLBStats.formatGameID(item.id);
-                                return callback(gid);
-                            } else {
-                                if (item.game_nbr === 2 || item.double_header_sw === 'Y') {
-                                    let gid = MLBStats.formatGameID(item.id);
-                                    return callback(gid);
-                                } else {
-                                    continue;
-                                }
-                            }
-                        }
+                    //Either playerID or teamID is required to return a gameID
+                    } else {
+                        console.error(errorMsg);
+                        return callback(null);
                     }
                 });
-
-                //Either playerID or teamID is required to return a gameID
-                } else {
-                    console.error(errorMsg);
-                    return callback(null);
-                }
 
             //Unrecognized format
             } else {
@@ -275,20 +285,20 @@
         }
         CALLBACK players batting, pitching, and fielding stats
         */
-        MLBStats.player = (RQ, callback) => {
+        this.player = (RQ, callback) => {
             //If RQ (Request Query) isn't an array make it a single element array
             if (!Array.isArray(RQ)) {
                 RQ = [RQ];
             }
 
 
-            let Players = {};
+            let players = [];
             let itemsProcessed = 0;
             let length = RQ.length;
 
 
             //Get Batting Stats for a Player
-            let getBattingStats = (date, gameID, playerID, gameStats, seriesStats, callback) => {
+            const getBattingStats = (date, gameID, playerID, gameStats, seriesStats, callback) => {
                 //Search for batter
                 request({
                     leauge: 'mlb',
@@ -302,33 +312,9 @@
 
                     let Player = {};
 
-                    //Pretty Player Responces
-                    //Set returned data as batter template
-                    Player.Batting = batterStats.Player;
-
                     //General Player Stats
                     //Batting Hand
                     Player.bats = batterStats.Player.bats;
-                    //Throwing Hand
-                    Player.throws = batterStats.Player.throws;
-                    //First Name
-                    Player.firstName = batterStats.Player.first_name;
-                    //Last Name
-                    Player.lastName = batterStats.Player.last_name;
-                    //Full Name
-                    Player.fullName = Player.firstName + " " + Player.lastName;
-                    //playerId
-                    Player.playerID = batterStats.Player.id;
-                    //height
-                    Player.height = batterStats.Player.height;
-                    //weight
-                    Player.weight = batterStats.Player.weight;
-                    //team
-                    Player.teamID = batterStats.Player.team;
-                    //number
-                    Player.number = batterStats.Player.jersey_number;
-                    //pos
-                    Player.pos = batterStats.Player.pos;
                     //current pos
                     if (typeof(batterStats.Player.current_position) !== 'undefined') {
                         Player.cpos = batterStats.Player.current_position;
@@ -337,28 +323,83 @@
                         //on a date, then they are on the bench
                         Player.cpos = "Bench";
                     }
-                    //dob
-                    Player.dob = batterStats.Player.dob;
-
+                    //date of birth
+                    Player.dob = {};
+                    let dobSplit = (batterStats.Player.dob).split('/');
+                    Player.dob.month = dobSplit[0];
+                    Player.dob.day = dobSplit[1];
+                    Player.dob.year = dobSplit[2];
+                    //Face Image URL
+                    Player.faceImage = `http://gd2.mlb.com/images/gameday/mugshots/mlb/${playerID}.jpg`;
+                    //First Name
+                    Player.firstName = batterStats.Player.first_name;
+                    //Full Name
+                    Player.fullName = batterStats.Player.first_name + " " + batterStats.Player.last_name;
+                    //height
+                    Player.height = {};
+                    let heightSplit = (batterStats.Player.height).split('-');
+                    Player.height.ft = heightSplit[0];
+                    Player.height.in = heightSplit[1];
+                    //Last Name
+                    Player.lastName = batterStats.Player.last_name;
+                    //number
+                    Player.number = batterStats.Player.jersey_number;
+                    //playerId
+                    Player.playerID = batterStats.Player.id;
+                    //pos
+                    Player.pos = batterStats.Player.pos;
+                    //team
+                    Player.teamID = batterStats.Player.team;
+                    //Throwing Hand
+                    Player.throws = batterStats.Player.throws;
+                    //weight
+                    Player.weight = batterStats.Player.weight;
 
                     //Batting Stats
-                    //Men on base
-                    Player.Batting.MenOn = batterStats.Player.Men_On;
+                    Player.Batting = {};
                     //Career
                     Player.Batting.Career = batterStats.Player.career;
+                    //Empty
+                    Player.Batting.Empty = batterStats.Player.Empty;
+                    //Game Batting Stats
+                    Player.Batting.Game = gameStats;
+                    //Game avg (hits / at bats)
+                    let gameAvg = (Player.Batting.Game.h / Player.Batting.Game.ab);
+                    //keep thousandths place in decimal, and trim leading zeros
+                    Player.Batting.Game.avg = gameAvg.toFixed(3).replace(/^[0]+/g,"");
+                    //abID
+                    Player.Batting.Game.abID = gameStats.update_AB;
+                    delete Player.Batting.Game.update_AB;
+                    //gamePK
+                    Player.Batting.Game.gamePK = gameStats.game_pk;
+                    delete Player.Batting.Game.game_pk;
+                    //lastab
+                    Player.Batting.Game.lastAB = gameStats.last_at_bat;
+                    delete Player.Batting.Game.last_at_bat;
+                    //vs Left Handed Pitchers
+                    Player.Batting.LHP = batterStats.Player.vs_LHP;
+                    //Bases Loaded
+                    Player.Batting.Loaded = batterStats.Player.Loaded;
+                    //Men on Base
+                    Player.Batting.MenOn = batterStats.Player.Men_On;
                     //Month
                     Player.Batting.Month = batterStats.Player.month;
-                    //Season
-                    Player.Batting.Season = batterStats.Player.season;
-                    //LHP
-                    Player.Batting.LHP = batterStats.Player.vs_LHP;
-                    //RHP
-                    Player.Batting.RHP = batterStats.Player.vs_RHP;
-                    //P
+                    //vs Pitcher
                     Player.Batting.P = batterStats.Player.vs_P;
                     //P5
                     Player.Batting.P5 = batterStats.Player.vs_P5;
-
+                    //Pitch
+                    Player.Batting.Pitch = batterStats.Player.Pitch;
+                    //vs Right Handed Pitchers
+                    Player.Batting.RHP = batterStats.Player.vs_RHP;
+                    //RISP
+                    Player.Batting.RISP = batterStats.Player.RISP;
+                    //Season
+                    Player.Batting.Season = batterStats.Player.season;
+                    //Series Batting Stats
+                    Player.Batting.Series = seriesStats;
+                    //Teams Batting Stats
+                    Player.Batting.Team = batterStats.Player.Team;
                     //Check if this player had at bats on date provided
                     if (batterStats.Player.atbats !== null) {
                         //abs
@@ -369,129 +410,135 @@
                         //if no faced pitches, dont include faced in Player
                         delete Player.Batting.faced;
                     }
-
-                    //Game Batting Stats
-                    Player.Batting.Game = gameStats;
-                    //Game avg (hits / at bats)
-                    let gameAvg = (Player.Batting.Game.h / Player.Batting.Game.ab);
-                    //round to nearest thousandth
-                    gameAvg = Math.round(1000*gameAvg)/1000;
-                    //keep thousandths place in decimal, and trim leading zeros
-                    Player.Batting.Game.avg = gameAvg.toFixed(3).replace(/^[0]+/g,"");
+                    //ASYNC, so call LAST
                     //gameID (formats to usable)
-                    Player.Batting.Game.gameID = MLBStats.formatGameID(gameStats.game_id);
-                    delete Player.Batting.Game.game_id;
-                    //lastab
-                    Player.Batting.Game.lastAB = gameStats.last_at_bat;
-                    delete Player.Batting.Game.last_at_bat;
-                    //abID
-                    Player.Batting.Game.abID = gameStats.update_AB;
-                    delete Player.Batting.Game.update_AB;
-                    //gamePK
-                    Player.Batting.Game.gamePK = gameStats.game_pk;
-                    delete Player.Batting.Game.game_pk;
-
-                    //Series Batting Stats
-                    Player.Batting.Series = seriesStats;
-
-                    callback(Player);
+                    this.formatGameID(gameStats.game_id, (gameID) => {
+                        Player.Batting.Game.gameID = gameID;
+                        delete Player.Batting.Game.game_id;
+                        return callback(Player);
+                    });
                 });
             }
 
 
             //Get Pitching Stats for a Player
-            let getPitchingStats = (date, gameID, playerID, callback) => {
+            const getPitchingStats = (date, gameID, playerID, callback) => {
                 request({
                     leauge: 'mlb',
                     date: date,
-                    endpoint: `/${gameID}/pitchers/${playerID}.xml`,
+                    endpoint: `/pitchers/${playerID}_${date.game}.xml`,
                 }, (pitcherStats) => {
                     //Check if pitcher request was successful
                     if (pitcherStats === null) {
-                        callback(null)
+                        return callback(null);
                     }
+
                     //Set returned data as batter template
-                    let Pitching = pitcherStats.Player;
+                    let Pitching = {};
 
-                    //Unique Pitching key changes
-                    //LHP
-                    Pitching.LHB = pitcherStats.Player.vs_LHB;
-                    //RHP
-                    Pitching.RHB = pitcherStats.Player.vs_RHB;
-                    //B (Remove Lowercase and Underscore)
-                    Pitching.B = pitcherStats.Player.vs_B;
-                    //B5 (Remove Lowercase and Underscore)
-                    Pitching.B5 = pitcherStats.Player.vs_B5;
+                    if (Number(pitcherStats.pitching.ip) !== 0) {
+                        //ip split
+                        let ipSplit = (pitcherStats.pitching.ip).split('.');
+                        let ipFull = ipSplit[0];
+                        let ipFraction = ipSplit[1];
 
+                        //Game
+                        Pitching.Game = {};
+                        //bb
+                        Pitching.Game.bb = pitcherStats.pitching.bb;
+                        //er
+                        Pitching.Game.er = pitcherStats.pitching.er;
+                        //era (9 * (er/ip))
+                        let gameEra;
+                        //whole inning
+                        if (ipFraction === 0) {
+                            gameEra = 9 * (Number(pitcherStats.pitching.er) / Number(pitcherStats.pitching.ip));
+                        //fraction of an inning
+                        } else {
+                            gameEra = 9 * (Number(pitcherStats.pitching.er) / (parseFloat(ipFull) + (ipFraction / 3)));
+                        }
+                        //keep hundreds place in decimal
+                        Pitching.Game.era = gameEra.toFixed(2);
+                        //h
+                        Pitching.Game.h = pitcherStats.pitching.h;
+                        //hbp
+                        Pitching.Game.hbp = pitcherStats.pitching.hbp;
+                        //hra
+                        Pitching.Game.hra = pitcherStats.pitching.hra;
+                        //ip
+                        Pitching.Game.ip = pitcherStats.pitching.ip;
+                        //k
+                        Pitching.Game.k = pitcherStats.pitching.k;
+                        //np (Number of Pitches)
+                        Pitching.Game.np = pitcherStats.pitching.np;
+                        //r
+                        Pitching.Game.r = pitcherStats.pitching.r;
+                        //s (Strikes?)
+                        Pitching.Game.s = pitcherStats.pitching.s;
+                        //whip ((h + bb) / ip)
+                        let gameWhip;
+                        //whole inning
+                        if (ipFraction === 0) {
+                            gameWhip = (Number(pitcherStats.pitching.h) + Number(pitcherStats.pitching.bb)) / pitcherStats.pitching.ip;
+                        //fraction of an inning
+                        } else {
+                            gameWhip = (Number(pitcherStats.pitching.h) + Number(pitcherStats.pitching.bb)) / (parseFloat(ipFull) + (ipFraction / 3));
+                        }
+                        //keep hundreds place in decimal
+                        Pitching.Game.whip = gameWhip.toFixed(2);
+                    }
 
-                    //MenOn (Remove Underscore)
-                    Pitching.MenOn = pitcherStats.Player.Men_On;
-                    //Career (Uppercase)
-                    Pitching.Career = pitcherStats.Player.career;
-                    //Season (Uppercase)
-                    Pitching.Season = pitcherStats.Player.season;
+                    //Non-basic additonal pitching stats
+                    request({
+                        leauge: 'mlb',
+                        date: date,
+                        endpoint: `/${gameID}/pitchers/${playerID}.xml`,
+                    }, (extraPitchingStats) => {
+                        //Check if pitcher request was successful
+                        if (extraPitchingStats === null) {
+                            return callback(null);
+                        }
 
-                    callback(Pitching);
+                        //B
+                        Pitching.B = extraPitchingStats.Player.vs_B;
+                        //B5
+                        Pitching.B5 = extraPitchingStats.Player.vs_B5;
+                        //Career
+                        Pitching.Career = extraPitchingStats.Player.career;
+                        //Empty
+                        Pitching.Empty = extraPitchingStats.Player.Empty;
+                        //LHP
+                        Pitching.LHB = extraPitchingStats.Player.vs_LHB;
+                        //Loaded
+                        Pitching.Loaded = extraPitchingStats.Player.Loaded;
+                        //MenOn
+                        Pitching.MenOn = extraPitchingStats.Player.Men_On;
+                        //Month
+                        Pitching.Month = extraPitchingStats.Player.Month;
+                        //Pitch
+                        Pitching.Pitch = extraPitchingStats.Player.Pitch;
+                        //RHP
+                        Pitching.RHB = extraPitchingStats.Player.vs_RHB;
+                        //RISP
+                        Pitching.RISP = extraPitchingStats.Player.RISP;
+                        //Season
+                        Pitching.Season = extraPitchingStats.Player.season;
+                            //er
+                            Pitching.Season.er = pitcherStats.pitching.s_er;
+                            //hbp
+                            Pitching.Season.hbp = pitcherStats.pitching.s_hbp;
+                            //hra
+                            Pitching.Season.hra = pitcherStats.pitching.s_hra;
+                            //k
+                            Pitching.Season.k = pitcherStats.pitching.s_k;
+                            //r
+                            Pitching.Season.r = pitcherStats.pitching.s_r;
+                        //Team
+                        Pitching.Team = extraPitchingStats.Player.Team;
+
+                        return callback(Pitching);
+                    });
                 });
-            }
-
-
-            let cleanPlayerResponce = (Player, callback) => {
-                //Delete and Rename common keys between Batting and Pitching
-
-                //Delete old keys
-                //Unique
-                delete Player.Batting.atbats;
-                delete Player.Batting.month;
-                delete Player.Batting.season;
-                delete Player.Batting.vs_LHP;
-                delete Player.Batting.vs_P;
-                delete Player.Batting.vs_P5;
-                delete Player.Batting.vs_RHP;
-
-                //General
-                delete Player.Batting.Men_On;
-                delete Player.Batting.bats;
-                delete Player.Batting.career;
-                delete Player.Batting.current_position;
-                delete Player.Batting.dob;
-                delete Player.Batting.first_name;
-                delete Player.Batting.height;
-                delete Player.Batting.id;
-                delete Player.Batting.jersey_number;
-                delete Player.Batting.last_name;
-                delete Player.Batting.pos;
-                delete Player.Batting.season;
-                delete Player.Batting.team;
-                delete Player.Batting.throws;
-                delete Player.Batting.type;
-                delete Player.Batting.weight;
-                if (Player.pos === 'P' || Player.cpos === 'P') {
-                    //Unique
-                    delete Player.Pitching.vs_B;
-                    delete Player.Pitching.vs_B5;
-                    delete Player.Pitching.vs_LHB;
-                    delete Player.Pitching.vs_RHB;
-
-                    //General
-                    delete Player.Pitching.Men_On;
-                    delete Player.Pitching.bats;
-                    delete Player.Pitching.career;
-                    delete Player.Pitching.current_position;
-                    delete Player.Pitching.dob;
-                    delete Player.Pitching.first_name;
-                    delete Player.Pitching.height;
-                    delete Player.Pitching.id;
-                    delete Player.Pitching.jersey_number;
-                    delete Player.Pitching.last_name;
-                    delete Player.Pitching.pos;
-                    delete Player.Pitching.season;
-                    delete Player.Pitching.team;
-                    delete Player.Pitching.throws;
-                    delete Player.Pitching.type;
-                    delete Player.Pitching.weight;
-                }
-                callback(Player);
             }
 
 
@@ -499,14 +546,11 @@
                 itemsProcessed++;
                 //If player request didn't return null then add to array
                 if (Player !== null) {
-                    cleanPlayerResponce(Player, (cleanPlayer) => {
-                        console.warn(cleanPlayer);
-                        Players[Player.playerID] = cleanPlayer;
-                    });
+                    players.push(Player);
                 }
                 //Only callback after all players info is returned
                 if(itemsProcessed === length) {
-                    return callback(Players);
+                    return callback(players);
                 }
             }
 
@@ -514,28 +558,31 @@
             //Loop through each player passed
             RQ.forEach((item, index, array) => {
                 //Find the date for this RQ item
-                let date = MLBStats.formatDate(item.search.date);
-                MLBStats.searchForGameID(item.search, (gameID, gameStats, seriesStats) => {
-                    //If no gameID is returned, stop executing function
-                    if (gameID === null) {
-                        addPlayer(null);
-                    }
-
-                    //Get Batting Stats
-                    getBattingStats(date, gameID, item.search.playerID, gameStats, seriesStats, (Player) => {
-                        //Return Format Date
-                        Player.Date = date;
-                        //Return RQ for current Player
-                        Player.RQ = item;
-                        //Check if player is a pitcher, if not return now
-                        if (Player.pos === 'P' || Player.cpos === 'P') {
-                            getPitchingStats(date, gameID, item.search.playerID, (Pitching) => {
-                                Player.Pitching = Pitching;
-                                addPlayer(Player);
-                            });
-                        } else {
-                            addPlayer(Player);
+                this.formatDate(item.search.date, (formattedDate) => {
+                    this.searchForGameID(item.search, (gameID, gameStats, seriesStats) => {
+                        //If no gameID is returned, stop executing function
+                        if (gameID === null) {
+                            return;
                         }
+
+                        //Get Batting Stats
+                        getBattingStats(formattedDate, gameID, item.search.playerID, gameStats, seriesStats, (Player) => {
+                            //Set Formatted Date
+                            Player.Date = formattedDate;
+                            //Return RQ for current Player
+                            Player.RQ = item;
+                            //Check if player is a pitcher, if not return now
+                            if (Player.pos === 'P' || Player.cpos === 'P') {
+                                getPitchingStats(formattedDate, gameID, item.search.playerID, (Pitching) => {
+                                    if (typeof(Pitching) !== null) {
+                                        Player.Pitching = Pitching;
+                                    }
+                                    return addPlayer(Player);
+                                });
+                            } else {
+                                return addPlayer(Player);
+                            }
+                        });
                     });
                 });
             });
@@ -553,7 +600,7 @@
         }
         CALLBACK todays games
         */
-        MLBStats.gamesOnDate = (RQ, callback) => {
+        this.gamesOnDate = (RQ, callback) => {
             //If RQ (Request Query) isn't an Array make it single element array
             if (!Array.isArray(RQ)) {
                 RQ = [RQ];
@@ -564,26 +611,30 @@
 
             //Loop through each game passed
             RQ.forEach((item, index, array) => {
-                let date = MLBStats.formatDate(item.search.date);
-                request({
-                    leauge: 'mlb',
-                    date: date,
-                    endpoint: `/master_scoreboard.json`,
-                }, (games) => {
-                    if (typeof(games.data.games.game) !== 'undefined') {
-                        games.data.games.game.RQ = item;
-                        dates.push(games.data.games.game);
-                    }
-                    itemsProcessed++;
-                    if(itemsProcessed === array.length)
-                        return callback(dates);
+                this.formatDate(item.search.date, (formattedDate) => {
+                    request({
+                        leauge: 'mlb',
+                        date: formattedDate,
+                        endpoint: `/master_scoreboard.json`,
+                    }, (games) => {
+                        games = games.data.games.game;
+                        if (typeof(games) !== 'undefined') {
+                            for (let game in games) {
+                                games[game].RQ = item;
+                            }
+                            dates.push(games);
+                        }
+                        itemsProcessed++;
+                        if (itemsProcessed === array.length) {
+                            return callback(dates);
+                        }
+                    });
                 });
             });
         }
 
 
 
-        //fix pass gameID
         /*
         PASS gameID or RQ (Request Query) with search
         {
@@ -596,7 +647,7 @@
         }
         CALLBACK game info
         */
-        MLBStats.game = (RQ, callback) => {
+        this.game = (RQ, callback) => {
             //If RQ (Request Query) isn't an Array make it single element array
             if (!Array.isArray(RQ)) {
                 RQ = [RQ];
@@ -607,8 +658,8 @@
 
             //Loop through each game passed
             RQ.forEach((item, index, array) => {
-                MLBStats.searchForGameID(item.search, (gameID) => {
-                    MLBStats.gameToDate(gameID, (date) => {
+                this.searchForGameID(item.search, (gameID) => {
+                    this.gameIDToDate(gameID, (date) => {
                         request({
                             leauge: 'mlb',
                             date: date,
@@ -617,8 +668,9 @@
                             game.data.game.RQ = item;
                             games.push(game.data.game);
                             itemsProcessed++;
-                            if(itemsProcessed === array.length)
+                            if (itemsProcessed === array.length) {
                                 return callback(games);
+                            }
                         });
                     });
                 });
@@ -628,7 +680,7 @@
 
 
         /*
-        PASS gameID or RQ (Request Query) with search
+        PASS RQ (Request Query) with search
         {
             search: {
                 gameID: formattGameID,
@@ -639,7 +691,7 @@
         }
         CALLBACK bench
         */
-        MLBStats.bench = (RQ, callback) => {
+        this.bench = (RQ, callback) => {
             //If RQ (Request Query) isn't an Array make it single element array
             if (!Array.isArray(RQ)) {
                 RQ = [RQ];
@@ -650,8 +702,8 @@
 
             //Loop through each game passed
             RQ.forEach((item, index, array) => {
-                MLBStats.searchForGameID(item.search, (gameID) => {
-                    MLBStats.gameToDate(gameID, (date) => {
+                this.searchForGameID(item.search, (gameID) => {
+                    this.gameIDToDate(gameID, (date) => {
                         request({
                             leauge: 'mlb',
                             date: date,
@@ -660,24 +712,35 @@
                             bench.bench.RQ = item;
                             games.push(bench.bench);
                             itemsProcessed++;
-                            if(itemsProcessed === array.length)
+                            if (itemsProcessed === array.length) {
                                 return callback(games);
+                            }
                         });
                     });
                 });
             });
         }
-
-
-        return MLBStats;
     }
 
-    //Define library when the page is loaded
-    if (typeof(MLBStats) === 'undefined') {
-        window.MLBStats = define_library();//create namespace
+
+    //if running in browser, Create window namespace
+    if (typeof(window) !== 'undefined') {
+        window.MLBStats = MLBStats;
+
+    //Define library as CommonJS module
+    } else if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') {
+        module.exports = MLBStats;
+
+    //Define library as AMD module
+    } else if (typeof(define) === 'function' && define.amd) {
+        define([], function() {
+            return MLBStats;
+        });
     }
 
-})(window);
+
+})();
+
 
 
 /*
@@ -690,34 +753,40 @@ PASS e (endpoint Object)
 CALLBACK requested object in JSON format
 */
 function request(e, callback) {
-    const xhr = new XMLHttpRequest();
-    xhr.withCredentials = false;
-    xhr.addEventListener('readystatechange', function() {
-        if (this.readyState === 4) {
-            if (this.status === 200) {
-                //Check for XML, if XML convert to JSON
+    fetch(`http://gd2.mlb.com/components/game/` +
+        `${e.leauge}/` +
+        `year_${e.date.year}/` +
+        `month_${e.date.month}/` +
+        `day_${e.date.day}` +
+        `${e.endpoint}`)
+    .then((response) => {
+        //If the request is successful
+        if(response.status === 200) {
+            response.text().then((data) => {
+                //Check for XML
                 if (e.endpoint.endsWith('xml')) {
-                    let xml = new DOMParser().parseFromString(this.responseText, "text/xml");
+                    let xml = new DOMParser().parseFromString(data, "text/xml");
                     let json = xml2json(xml);
-                    //console.warn(json);//DEBUG
                     return callback(JSON.parse(json));
+                //Check for JSON
                 } else if (e.endpoint.endsWith('json')) {
-                    //console.warn(this.responseText);//DEBUG
-                    return callback(JSON.parse(this.responseText));
+                    return callback(JSON.parse(data));
                 }
                 return callback(null);
-            }
+            });
+        //If the server gives a non-success responce status then quit
+        } else {
+            console.error('Status Code: ' + response.status);
+            return callback(null);
         }
+    })
+    //Error fetching data
+    .catch(function(err) {
+        console.error('Fetch Error: ' + err);
+        return callback(null);
     });
-    xhr.open('GET', `http://gd2.mlb.com/components/game/` +
-                    `${e.leauge}/` +
-                    `year_${e.date.year}/` +
-                    `month_${e.date.month}/` +
-                    `day_${e.date.day}` +
-                    `${e.endpoint}`,
-                    true);
-    xhr.send(null);
 }
+
 
 
 /*	This work is licensed under Creative Commons GNU LGPL License.

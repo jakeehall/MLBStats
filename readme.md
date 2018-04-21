@@ -1,48 +1,50 @@
 # MLBStats
-##### Get ready for the 2018 season!
+### The 2018 season is here!
 By Jacob Hall
 
-MLBStats is an easy to use, and powerful JavaScript library for fetching scores and stats from MLB games. MLBStats is in its initial release stages, features and support are continuously being developed through the post/off season into preseason 2018, and beyond.
+MLBStats is an easy-to-use and powerful JavaScript wrapper for fetching official Major League Baseball stats, scores, and information. MLBStats is in its initial release stages, features and support are continuously being developed.
 
-## Highlighted Features - [Changelog](/notes/changelog.md) / [Upcoming](/notes/upcoming.md)
+## Highlighted Features - [Changelog](./changelog.md) / [Upcoming](https://github.com/jakeehall/MLBStats/projects)
 * Easy to Use
-    * Search functionality (find games without knowing a gameID)
+    * Search functionality
+        * Find a game by searching for a team on a date
+        * Find all games on a date by searching a date
     * Shortcut to find a date relative to today
     * Flexible Functions, allow for multiple or single searches to be requested using the same function
-    * Full documentation and links to live working demos
+    * Full documentation and examples
     * Helpful console error messages to resolve bugs
-    * No dependencies!
 * Full of Functions
     * Look up player(s) stats (batting, and pitching)
     * Look up game(s) stats (linescore, plays, and more...)
     * Look up all games played on a given date
     * Look up bullpens and benched players
-    * Look up teams pitching staffs
-    * Look up team news
-    * Support for minor leagues
+    * Support for minor leagues (Coming Soon*)
     * Support for double headers
+    * MORE COMING SOON!
 * Powerful
-    * Functions are compatible with each other, allowing a function to return data from and then pass it into another function
-    * All available data will be returned when looking up stats, meaning that there's no limitations to what stats are accessible
-* Forward Compatible
-    * Look up request queries written now will NOT break with future versions of MLBStats
-    * More Coming Soon
+    * Written using functional asynchronous code.
+        * IT'S FAST!!!
+    * Functions are compatible with each other, allowing for the chaining of MLBStats functions.
+    * It only takes one request to find every piece of information.
+        * Functions return all available data for a given search subject. This saves users from bandwidth lag times when looking up stats of a similar and previous searches.
 
 ### Disclaimer
-##### PLEASE USE MLBSTATS RESPONSIBLY!
+#### PLEASE USE MLBSTATS RESPONSIBLY!
 This library and projects using this library, must be used for individual purposes ONLY. To use this library for bulk or commercial purposes you MUST have permission from Major League Baseball (more information below).
 
 >[The accounts, descriptions, data and presentation in the referring page (the "Materials") are proprietary content of MLB Advanced Media, L.P ("MLBAM"). Only individual, non-commercial, non-bulk use of the Materials is permitted and any other use of the Materials is prohibited without prior written authorization from MLBAM. Authorized users of the Materials are prohibited from using the Materials in any commercial manner other than as expressly authorized by MLBAM.](http://gdx.mlb.com/components/copyright.txt)
 
-### Credits
-* #### [xml2json](http://goessner.net/download/prj/jsonxml/) - By Stefan Goessner
+### Dependency Credits
+* #### [fetch (Polyfill)](https://github.com/github/fetch) - GitHub
+* #### [whatwg-fetch](https://github.com/matthew-andrews/fetch) - Matt Andrews
+* #### [xml2json](http://goessner.net/download/prj/jsonxml/) - Stefan Goessner
 
 ## Getting Started
 #### Clone or Download the ZIP of _MLBStats.min.js_ from GitHub
 
 The newest version of this file can be found in this directory on GitHub:
 ```
-/min/new/MLBStats.X.X.X.min.js
+/min/MLBStats.js
 ```
 **_NOTE: The X's are the version number._**
 
@@ -72,15 +74,11 @@ MLBStats.manual();
 
 #### Print and Return MLBStats Version
 ``` javascript
-MLBStats.version(true);
-//CONSOLE OUTPUT: "v1.0.0" if 1.0.0 is the version
-
-
-//RETURNS the version object that can be read as:
-var version = MLBStats.version();
-version.main = 1;
-version.sub = 0;
-version.patch = 0;
+//Return VERSION version
+MLBStats.version((main, sub, patch) => {
+    console.log(`v${main}.${sub}.${patch}`);
+    //OUTPUT: v1.3.0
+});
 ```
 This function can be used to check the users library version for compatibility and troubleshooting. For example, if another library used MLBStats as a way of fetching data, that library, could also check to see if the version of MLBStats is compatible with itself.
 
@@ -186,11 +184,15 @@ This function can be used to check the users library version for compatibility a
 > ##### From Shortcut Date, JavaScript Date Object, Formatted Date Object:
 > ``` javascript
 > //Shortcut:
-> MLBStats.formatDate(0);
+> MLBStats.formatDate(0, (formattedDate) => {
+>   let today = formattedDate;
+> });
 >
 >
 > //JavaScript Date Object:
-> MLBStats.formatDate(new Date(1503980931904));
+> MLBStats.formatDate(new Date(1503980931904), (formattedDate) => {
+>   let date = formattedDate;
+> });
 >
 >
 > //Formatted Date Object
@@ -200,13 +202,15 @@ This function can be used to check the users library version for compatibility a
 >   year: 2017,
 >   month: 10,
 >   day: 1,
+> }, (formattedDate) => {
+>   let date = formattedDate;
 > });
-> //If game isn't found in date, it will default to 1
->
->
+> //If there's no game key found inside date, game will default to 1
+> ```
+> ``` javascript
 > //From gameID:
-> MLBStats.gameToDate('gid_2017_09_16_sdnmlb_colmlb_1', (date) => {
->   let formattedDate = date;
+> MLBStats.gameIDToDate('gid_2017_09_16_sdnmlb_colmlb_1', (formattedDate) => {
+>   let date = formattedDate;
 > });
 > ```
 
@@ -222,7 +226,7 @@ This function can be used to check the users library version for compatibility a
 > //directly rather than using a Search Object.
 > let Search =
 > {
->   gameID: 'gid_2017_09_16_sdnmlb_colmlb_1',
+>   gameID: 'gid_2017_09_16_sdnmlb_colmlb_1', //Known GameID
 > };
 >
 >
@@ -273,7 +277,7 @@ This function can be used to check the users library version for compatibility a
 > //teamID and player position
 > let Search =
 > {
->   teamID: 115, //Rockies
+>   teamID: "col", //Rockies
 >   pos: "CF", //Centerfield
 > };
 > ```
@@ -283,50 +287,58 @@ This function can be used to check the users library version for compatibility a
 #### game(gameID, callback)
 ### All Games on a Date
 ``` javascript
-//Find all games on a previous date
-MLBStats.gamesOnDate({
+//Search for games today and on 09/04/2017
+MLBStats.gamesOnDate([
+{
     search: {
-        date: 0,//Shortcut for today
+        date: 0, //Shortcut for today
     },
-}, (games) => {
-    if (games !== null && Array.isArray(games)) {
-        games.forEach((item) => {
-            let score = '';
-            //When creating your own functions it's helpful to remember that you
-            //can log item to the console to view what stats you have access to
-            //console.log(item);
+},
+{
+    search: {
+        date: {year: 2017, month: 9, day: 4},
+    },
+},], (results) => {
+    if (results !== null && Array.isArray(results)) {
+        results.forEach((item) => {
+            item.forEach((game) => {
+                let score = '';
+                //When creating your own functions it's helpful to rember that you
+                //can log item to the console to view what stats you have access to
+                //console.log(item);
 
-            if (typeof(item.linescore) !== 'undefined') {
-                score = `${item.linescore.r.away} - ${item.linescore.r.home}\t`;
+                if (typeof(game.linescore) !== 'undefined') {
+                    score = `${game.linescore.r.away} - ${game.linescore.r.home}\t`;
 
-                //If game is in progress print inning and inning state with outs
-                if (item.status.status === "In Progress") {
-                    score += `${item.status.inning_state} ${item.status.inning}\t`;
-                    score += `${item.status.o} out(s)`;
+                    //If game is in progress print inning and inning state with outs
+                    if (game.status.status === "In Progress") {
+                        score += `${game.status.inning_state} ${game.status.inning}\t`;
+                        score += `${game.status.o} out(s)`;
 
-                //Else if the game is over mark the score as final
-                } else if (item.status.status === "Game Over" || item.status.status === "Final") {
-                    score += `Final`;
+                    //Else if the game is over mark the score as final
+                    } else {
+                        score += game.status.status;
+                    }
+
+                //If the game hasn't started, then print the time that the game begins
+                } else {
+                    score = `${game.time}${game.ampm} ${game.time_zone}`;
                 }
 
-            //If the game hasn't started, then print the time that the game begins
-            } else {
-                score = `${item.time}${item.ampm} ${item.time_zone}`;
-            }
-
-            //Print out the away teams city and name and the home teams city and name
-            console.log(`${item.away_team_city} ${item.away_team_name} @ ${item.home_team_city} ${item.home_team_name}\n${score}`);
+                //Print out the away teams city and name and the home teams city and name
+                console.log(`${game.away_team_city} ${game.away_team_name} @ ${game.home_team_city} ${game.home_team_name}\n${score}`);
+            });
         });
     }
 });
 ```
-### Select Games on a Date
+### Games on a Dates
 ``` javascript
-//Find a single game on a date
+//Find a single game for each search in rq
 let rq =
 [{
     search: {
-        playerID: 453568,
+        playerID: 453568, //Using playerID
         date: {
             year: 2017,
             month: 9,
@@ -337,7 +349,7 @@ let rq =
 },
 {
     search: {
-        playerID: 453568,
+        teamID: 'col', //Using teamID
         date: {
             year: 2017,
             month: 9,

@@ -2,18 +2,18 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>MLBStats - Learn</title>
+    <title>MLBStats - Examples</title>
 </head>
 <body>
-<script type="text/javascript" src="../src/MLBStats.js"></script>
+<script type="text/javascript" src="../min/MLBStats.min.js"></script>
 <script>
-/*
+
 //MANUAL
-MLBStats.man();
+MLBStats.manual();
 
 
 //MLBStats OBJECT for full list of functions
-console.log(MLBStats);
+//console.log(MLBStats);
 
 
 //Return VERSION version
@@ -21,7 +21,7 @@ MLBStats.version((main, sub, patch) => {
     console.log(`v${main}.${sub}.${patch}`);
 });
 
-*/
+
 
 //PITCHER "608566" (German Marquez)
 MLBStats.player({
@@ -205,14 +205,14 @@ MLBStats.game(gamesToSearch, (games) => {
 });
 
 
-MLBStats.game({
+/*MLBStats.game({
     search: {
         teamID: "col",
         date: 0,
     }
 }, (g) => {
     console.log(g);
-});
+});*/
 
 
 //Creating a web app that displays todays games with live info
@@ -226,37 +226,41 @@ MLBStats.gamesOnDate([
     search: {
         date: {year: 2017, month: 9, day: 4},
     },
-},], (results) => {
-    if (results !== null && Array.isArray(results)) {
-        results.forEach((item) => {
-            item.forEach((game) => {
-                let score = '';
-                //When creating your own functions it's helpful to rember that you
-                //can log item to the console to view what stats you have access to
-                //console.log(item);
+},], (dates) => {
+    for (let date in dates) {
+        let day = dates[date];
+        //console.log(`\n${day}`);
+        for (let game in day) {
+            //console.log(JSON.stringify(day[game], null, 4));
+            let score = '';
+            //When creating your own functions it's helpful to rember that you
+            //can log item to the console to view what stats you have access to
+            //console.log(item);
 
-                if (typeof(game.linescore) !== 'undefined') {
-                    score = `${game.linescore.r.away} - ${game.linescore.r.home}\t`;
+            if (typeof(day[game].linescore) !== 'undefined') {
+                score = `${day[game].linescore.r.away} - ${day[game].linescore.r.home}\n`;
 
-                    //If game is in progress print inning and inning state with outs
-                    if (game.status.status === "In Progress") {
-                        score += `${game.status.inning_state} ${game.status.inning}\t`;
-                        score += `${game.status.o} out(s)`;
+                //If game is in progress print inning and inning state with outs
+                if (day[game].status.status === "In Progress") {
+                    score += `${day[game].status.inning_state} ${day[game].status.inning}\n`;
+                    score += `${day[game].status.o} out(s)`;
 
-                    //Else if the game is over mark the score as final
-                    } else {
-                        score += game.status.status;
-                    }
-
-                //If the game hasn't started, then print the time that the game begins
+                //Else if the game is over mark the score as final
                 } else {
-                    score = `${game.time}${game.ampm} ${game.time_zone}`;
+                    score += day[game].status.status;
                 }
 
-                //Print out the away teams city and name and the home teams city and name
-                console.log(`${game.away_team_city} ${game.away_team_name} @ ${game.home_team_city} ${game.home_team_name}\n${score}`);
-            });
-        });
+            //If the game hasn't started, then print the time that the game begins
+            } else {
+                score = `${day[game].time}${day[game].ampm} ${day[game].time_zone}`;
+            }
+
+            //Print out the away teams city and name and the home teams city and name
+            console.log(
+                `${day[game].away_team_city} ${day[game].away_team_name} @ ` +
+                `${day[game].home_team_city} ${day[game].home_team_name}\n${score}`
+            );
+        }
     }
 });
 
