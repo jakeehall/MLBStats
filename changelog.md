@@ -1,4 +1,4 @@
-## v1.3.0 [201803 ??]
+## v1.3.0 [20180421]
 #### Ease-of-Use, Wider Browser/Node Support, Callback/General Speed, and Fixes Update
 * ADDED: More pitching stats!
     * Game: bb, er, era, h, hbp, hra, ip, k, np, r, s, whip
